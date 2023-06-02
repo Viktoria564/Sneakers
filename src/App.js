@@ -5,6 +5,9 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { Route, Routes } from "react-router-dom";
 import Favorites from "./pages/Favorites";
+import { createContext } from "react";
+
+export const AppContext = createContext({});
 
 function App() {
   const [items, setItems] = useState([]);
@@ -12,21 +15,34 @@ function App() {
   const [favoriteItems, setFavoriteItems] = useState([]);
   const [searchValue, setSearchValue] = useState("");
   const [isSideCart, setIsSideCart] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    axios.get("http://localhost:3001/items").then((res) => setItems(res.data));
-    axios
-      .get("http://localhost:3001/cart")
-      .then((res) => setCartItems(res.data));
-    axios
-      .get("http://localhost:3001/favorites")
-      .then((res) => setFavoriteItems(res.data));
+    async function fetchData() {
+      const itemsResponse = await axios.get("http://localhost:3001/items");
+      const cartResponse = await axios.get("http://localhost:3001/cart");
+      const favoritesResponse = await axios.get(
+        "http://localhost:3001/favorites"
+      );
+
+      setIsLoading(false);
+
+      setCartItems(cartResponse.data);
+      setFavoriteItems(favoritesResponse.data);
+      setItems(itemsResponse.data);
+    }
+
+    fetchData();
   }, []);
 
   function addProductInCart(obj) {
-    axios.post("http://localhost:3001/cart", obj);
-    console.log(obj.id);
-    setCartItems((prev) => [...prev, obj]);
+    if (cartItems.find((item) => item.id === obj.id)) {
+      axios.delete(`http://localhost:3001/cart/${obj.id}`);
+      setCartItems((prev) => prev.filter((item) => item.id !== obj.id));
+    } else {
+      axios.post("http://localhost:3001/cart", obj);
+      setCartItems((prev) => [...prev, obj]);
+    }
   }
 
   function addSearchValue(e) {
@@ -39,55 +55,78 @@ function App() {
     setCartItems(cartItems.filter((item) => item.id !== id));
   }
 
-  function addFavoriteItem(obj) {
-    if (favoriteItems.find((item) => item.id === obj.id)) {
-      axios.delete(`http://localhost:3001/favorites/${obj.id}`);
-    } else {
-      axios.post("http://localhost:3001/favorites", obj);
-      setFavoriteItems([...favoriteItems, obj]);
+  async function addFavoriteItem(obj) {
+    try {
+      if (favoriteItems.find((item) => item.id === obj.id)) {
+        axios.delete(`http://localhost:3001/favorites/${obj.id}`);
+        setFavoriteItems((prev) => prev.filter((item) => item.id !== obj.id));
+      } else {
+        const { data } = await axios.post(
+          "http://localhost:3001/favorites",
+          obj
+        );
+        setFavoriteItems([...favoriteItems, obj]);
+      }
+    } catch (error) {
+      alert("Не удалось добавить в фавориты");
     }
+  }
+
+  function getItemToCart(id) {
+    return cartItems.some((obj) => obj.id === id);
   }
 
   return (
     <>
-      {isSideCart && (
-        <SideCart
-          cartItems={cartItems}
-          onClick={() => setIsSideCart(false)}
-          onDelete={deleteCartItems}
-        />
-      )}
-      <div className="container">
-        <Header onClickCart={() => setIsSideCart(true)} />
-        <Routes>
-          <Route
-            path="/"
-            exact
-            element={
-              <Home
-                items={items}
-                searchValue={searchValue}
-                addSearchValue={addSearchValue}
-                addProductInCart={addProductInCart}
-                addFavoriteItem={addFavoriteItem}
-                setSearchValue={setSearchValue}
-              />
-            }
-          ></Route>
-        </Routes>
-        <Routes>
-          <Route
-            path="/favorites"
-            element={
-              <Favorites
-                items={favoriteItems}
-                addProductInCart={addProductInCart}
-                addFavoriteItem={addFavoriteItem}
-              />
-            }
-          ></Route>
-        </Routes>
-      </div>
+      <AppContext.Provider
+        value={{
+          items,
+          cartItems,
+          favoriteItems,
+          getItemToCart,
+          setIsSideCart,
+          setCartItems,
+        }}
+      >
+        {isSideCart && (
+          <SideCart
+            cartItems={cartItems}
+            onClick={() => setIsSideCart(false)}
+            onDelete={deleteCartItems}
+          />
+        )}
+        <div className="container">
+          <Header onClickCart={() => setIsSideCart(true)} />
+          <Routes>
+            <Route
+              path="/"
+              exact
+              element={
+                <Home
+                  items={items}
+                  searchValue={searchValue}
+                  addSearchValue={addSearchValue}
+                  addProductInCart={addProductInCart}
+                  addFavoriteItem={addFavoriteItem}
+                  setSearchValue={setSearchValue}
+                  isLoading={isLoading}
+                />
+              }
+            ></Route>
+          </Routes>
+          <Routes>
+            <Route
+              path="/favorites"
+              element={
+                <Favorites
+                  addProductInCart={addProductInCart}
+                  addFavoriteItem={addFavoriteItem}
+                />
+              }
+            ></Route>
+          </Routes>
+        </div>
+      </AppContext.Provider>
     </>
   );
 }

@@ -340,6 +340,11 @@ body {
   position: relative;
   cursor: pointer;
 
+  &:disabled {
+    background-color: #bebebe;
+    cursor: default;
+  }
+
   &:hover {
     img {
       transform: translateX(10px);

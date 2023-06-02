@@ -1,4 +1,38 @@
+import { useState } from "react";
+import Info from "./Info";
+import { AppContext } from "../App";
+import { useContext } from "react";
+import axios from "axios";
+
 function SideCart(props) {
+  const { setCartItems, cartItems } = useContext(AppContext);
+  const [numberOfOrder, setNumberOfOrder] = useState(null);
+  const [isCartCompleted, setIsCartCompleted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  async function onClickOrder() {
+    try {
+      setIsLoading(true);
+      const { data } = await axios.post("http://localhost:3001/orders", {
+        items: cartItems,
+      });
+      for (let i = 0; i < Array.length; i++) {
+        let item = cartItems[i];
+        await axios.delete("http://localhost:3001/orders/" + item.id);
+      }
+
+      // cartItems.map((item) =>
+      //   axios.delete(`http://localhost:3001/cart/${item.id}`)
+      // );
+      setNumberOfOrder(data.id);
+      setCartItems([]);
+      setIsCartCompleted(true);
+    } catch (error) {
+      alert("Заказ не удалось сделать :(");
+    }
+    setIsLoading(false);
+  }
+
   return (
     <div className="shadow">
       <div className="side-cart">
@@ -51,7 +85,11 @@ function SideCart(props) {
                 <span className="side-cart__result-sum">1074 грн.</span>
               </li>
             </ul>
-            <button className="button">
+            <button
+              onClick={() => onClickOrder()}
+              className="button"
+              disabled={isLoading}
+            >
               Оформить заказ
               <img
                 width={13}
@@ -59,28 +97,22 @@ function SideCart(props) {
                 src="./img/icon-arrow.svg"
                 alt="Arrow"
               />
-            </button>{" "}
+            </button>
           </>
         ) : (
-          <div className="side-cart__empty-box">
-            <img
-              width={120}
-              height={120}
-              src="./img/empty-cart.png"
-              alt="Пустая корзина"
-            />
-            <h4>Корзина пустая</h4>
-            <p>Добавьте хотя бы одну пару кроссовок, чтобы сделать заказ.</p>
-            <button onClick={props.onClick}>
-              <img
-                width={13}
-                height={12}
-                src="./img/icon-arrow-left.svg"
-                alt="Arrow"
-              />
-              Вернуться назад
-            </button>
-          </div>
+          <Info
+            title={isCartCompleted ? "Заказ оформлен!" : "Корзина пустая"}
+            img={
+              isCartCompleted
+                ? "./img/comleted-cart.png"
+                : "./img/empty-cart.png"
+            }
+            text={
+              isCartCompleted
+                ? `Ваш заказ #${numberOfOrder} скоро будет передан курьерской доставке`
+                : "Добавьте хотя бы одну пару кроссовок, чтобы сделать заказ."
+            }
+          />
         )}
       </div>
     </div>

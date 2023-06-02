@@ -1,6 +1,5 @@
 import Product from "../components/product";
 import productStyles from "../components/product/Product.module.scss";
-
 function Home({
   items,
   searchValue,
@@ -8,7 +7,29 @@ function Home({
   addProductInCart,
   addFavoriteItem,
   setSearchValue,
+  isLoading,
 }) {
+  function renderCards() {
+    return (
+      isLoading
+        ? [...Array(12)]
+        : items.filter((item) =>
+            item.title.toLowerCase().includes(searchValue.toLowerCase())
+          )
+    ).map((item) => (
+      <Product
+        title={item && item.title}
+        price={item && item.price}
+        urlImg={item && item.imageUrl}
+        id={item && item.id}
+        onClick={() => addProductInCart(item)}
+        onFavorite={() => addFavoriteItem(item)}
+        key={item && item.id}
+        loading={isLoading}
+      />
+    ));
+  }
+
   return (
     <section className="products">
       <div className="products__top">
@@ -49,22 +70,7 @@ function Home({
           )}
         </div>
       </div>
-      <ul className={productStyles.products__list}>
-        {items
-          .filter((item) =>
-            item.title.toLowerCase().includes(searchValue.toLowerCase())
-          )
-          .map((item) => (
-            <Product
-              title={item.title}
-              price={item.price}
-              urlImg={item.imageUrl}
-              onClick={() => addProductInCart(item)}
-              onFavorite={() => addFavoriteItem(item)}
-              key={item.id}
-            />
-          ))}
-      </ul>
+      <ul className={productStyles.products__list}>{renderCards()}</ul>
     </section>
   );
 }
