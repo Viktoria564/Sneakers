@@ -175,17 +175,60 @@ body {
       }
     }
   }
+
+  &__favorites-box {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    img {
+      margin-bottom: 20px;
+    }
+
+    h4 {
+      font-weight: 600;
+      font-size: 22px;
+      line-height: 27px;
+      margin-bottom: 10px;
+    }
+
+    p {
+      max-width: 285px;
+      font-size: 16px;
+      line-height: 24px;
+      opacity: 0.4;
+      margin-bottom: 40px;
+      text-align: center;
+    }
+
+    button {
+      background-color: #9DD558;
+      border-radius: 18px;
+      border: none;
+      color: #fff;
+      padding: 19px 59px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      cursor: pointer;
+
+      &:hover {
+        img {
+          transform: translateX(-10px);
+        }
+      }
+
+      img {
+        margin: 0 20px 0 0;
+        transition: transform 0.3s ease-in-out;
+      }
+    }
+  }
 }
 
-.shadow {
-  position: absolute;
-  width: 100%;
-  height: 135vh;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 1;
-  left: 0;
-  top: 0;
-}
 
 .side-cart {
   height: 100vh;

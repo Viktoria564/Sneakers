@@ -1,11 +1,12 @@
 import Header from "./components/Header";
-import SideCart from "./components/SideCart";
+import SideCart from "./components/SideCart/SideCart";
 import Home from "./pages/Home";
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { Route, Routes } from "react-router-dom";
 import Favorites from "./pages/Favorites";
 import { createContext } from "react";
+import Orders from "./pages/Orders";
 
 export const AppContext = createContext({});
 
@@ -19,29 +20,40 @@ function App() {
 
   useEffect(() => {
     async function fetchData() {
-      const itemsResponse = await axios.get("http://localhost:3001/items");
-      const cartResponse = await axios.get("http://localhost:3001/cart");
-      const favoritesResponse = await axios.get(
-        "http://localhost:3001/favorites"
-      );
+      try {
+        const [itemsResponse, cartResponse, favoritesResponse] =
+          await Promise.all([
+            axios.get("http://localhost:3001/items"),
+            axios.get("http://localhost:3001/cart"),
+            axios.get("http://localhost:3001/favorites"),
+          ]);
 
-      setIsLoading(false);
+        setIsLoading(false);
 
-      setCartItems(cartResponse.data);
-      setFavoriteItems(favoritesResponse.data);
-      setItems(itemsResponse.data);
+        setCartItems(cartResponse.data);
+        setFavoriteItems(favoritesResponse.data);
+        setItems(itemsResponse.data);
+      } catch (error) {
+        alert("Ошибка!");
+        console.error(error);
+      }
     }
 
     fetchData();
   }, []);
 
   function addProductInCart(obj) {
-    if (cartItems.find((item) => item.id === obj.id)) {
-      axios.delete(`http://localhost:3001/cart/${obj.id}`);
-      setCartItems((prev) => prev.filter((item) => item.id !== obj.id));
-    } else {
-      axios.post("http://localhost:3001/cart", obj);
-      setCartItems((prev) => [...prev, obj]);
+    try {
+      if (cartItems.find((item) => item.id === obj.id)) {
+        setCartItems((prev) => prev.filter((item) => item.id !== obj.id));
+        axios.delete(`http://localhost:3001/cart/${obj.id}`);
+      } else {
+        setCartItems((prev) => [...prev, obj]);
+        axios.post("http://localhost:3001/cart", obj);
+      }
+    } catch (error) {
+      alert("Ошибка!");
+      console.error(error);
     }
   }
 
@@ -50,9 +62,13 @@ function App() {
   }
 
   function deleteCartItems(id) {
-    console.log(id);
-    axios.delete(`http://localhost:3001/cart/${id}`);
-    setCartItems(cartItems.filter((item) => item.id !== id));
+    try {
+      axios.delete(`http://localhost:3001/cart/${id}`);
+      setCartItems(cartItems.filter((item) => item.id !== id));
+    } catch (error) {
+      alert("Ошибка!");
+      console.error(error);
+    }
   }
 
   async function addFavoriteItem(obj) {
@@ -88,13 +104,12 @@ function App() {
           setCartItems,
         }}
       >
-        {isSideCart && (
-          <SideCart
-            cartItems={cartItems}
-            onClick={() => setIsSideCart(false)}
-            onDelete={deleteCartItems}
-          />
-        )}
+        <SideCart
+          cartItems={cartItems}
+          onClick={() => setIsSideCart(false)}
+          onDelete={deleteCartItems}
+          opened={isSideCart}
+        />
         <div className="container">
           <Header onClickCart={() => setIsSideCart(true)} />
           <Routes>
@@ -124,6 +139,9 @@ function App() {
                 />
               }
             ></Route>
+          </Routes>
+          <Routes>
+            <Route path="/orders" element={<Orders />}></Route>
           </Routes>
         </div>
       </AppContext.Provider>
